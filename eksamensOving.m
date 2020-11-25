@@ -12,19 +12,19 @@ r_c= rank(c);
 dim = size(lambda);
 lambda = lambda * ones([dim(1),1]);
 
-%transferfunction
+%% transferfunction
 A = [0 -4; 1 0]; B = [-2; 0]; C = [0 1]; D = 1;
 sys = ss(A,B,C,D); % state space model
 g = tf(sys);
 
-%inverse laplace
+%% inverse laplace
 syms s;
 re = ilaplace((s^2 +2)/(s^2 + 4));
 
-%positive definite check
+%% positive definite check
 M = [1 0; 0 1];
 try chol(M)
-    disp("Positive defenite")
+    disp("Positive definite")
 catch ME
-    disp("Not positve defenite")
+    disp("Not positve definite")
 end
