@@ -35,9 +35,10 @@ re = ilaplace((s^2 +2)/(s^2 + 4));
 
 %% discrete KF
 n = 3; %number of iterations - 1
-A_d = 1; B_d = 1; u = zeros(1,n);
-Q_d = 2; R_d = 3; C_d = 1;   y = [1 2 1];
-K=zeros(1,n); x_bar = 0; P_bar = eye(1);% preallocation for speed
+A_d = 1; B_d = 1; C_d = 1;
+u = zeros(1,n); y = [1 2 1];
+Q_d = 2; R_d = 3;
+K=zeros(1,n); x_bar = 0; P_bar = eye(1); %inital values
 for k = 1: n
     K(k) = (P_bar(k)*C_d')*(C_d*P_bar(k)*C_d + R_d)^(-1);
     x_hat(k) = x_bar(k) + K(k)*(y(k) - C_d*x_bar(k));
