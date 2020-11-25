@@ -14,6 +14,7 @@ r_c= rank(c);
 [v, lambda ]= eig(A);
 dim = size(lambda);
 lambda = lambda * ones([dim(1),1]); % convert from a diagnoal matrix to a vector
+%note that all eigenvectors are normilazed
 
 %% transferfunction
 A = [0 -4; 1 0]; B = [-2; 0]; C = [0 1]; D = 1;
@@ -26,15 +27,15 @@ re = ilaplace((s^2 +2)/(s^2 + 4));
 
 %% lyaponov
 % N = eye(2);
-% M = lyap(A,N);  %wil
+% M = lyap(A,N);  %requires unike solution
 
 %% positive definite check
-% M = [1 0; 0 1];
-% try chol(M)
-%     disp("Positive definite")
-% catch ME
-%     disp("Not positve definite")
-% end
+M = [1 0; 0 1];
+try chol(M)
+    disp("Positive definite")
+catch ME
+    disp("Not positve definite")
+end
 %% LQR
 
 %% discrete KF
