@@ -25,9 +25,28 @@ syms s;
 re = ilaplace((s^2 +2)/(s^2 + 4));
 
 %% positive definite check
-M = [1 0; 0 1];
-try chol(M)
-    disp("Positive definite")
-catch ME
-    disp("Not positve definite")
+% M = [1 0; 0 1];
+% try chol(M)
+%     disp("Positive definite")
+% catch ME
+%     disp("Not positve definite")
+% end
+%% LQR
+
+%% discrete KF
+n = 3; %number of iterations - 1
+A_d = 1; B_d = 1; u = zeros(1,n);
+Q_d = 2; R_d = 3; C_d = 1;   y = [1 2 1];
+K=zeros(1,n); x_bar = 0; P_bar = eye(1);% preallocation for speed
+for k = 1: n
+    K(k) = (P_bar(k)*C_d')*(C_d*P_bar(k)*C_d + R_d)^(-1);
+    x_hat(k) = x_bar(k) + K(k)*(y(k) - C_d*x_bar(k));
+    P_hat(k) = (eye(1) -K(k)*C_d)*P_bar(k)*(eye(1)-K(k)*C_d)' + K(k)*R_d*K(k)';
+    x_bar(k+1) = A_d*x_hat(k) + B_d*u(k);
+    P_bar(k+1) = A_d*P_hat(k)*A_d' + Q_d;
 end
+
+%% Minimal realization
+
+
+
