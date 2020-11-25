@@ -13,7 +13,7 @@ r_c= rank(c);
 %% Eigenvalues and vectors
 [v, lambda ]= eig(A);
 dim = size(lambda);
-lambda = lambda * ones([dim(1),1]);
+lambda = lambda * ones([dim(1),1]); % convert from a diagnoal matrix to a vector
 
 %% transferfunction
 A = [0 -4; 1 0]; B = [-2; 0]; C = [0 1]; D = 1;
