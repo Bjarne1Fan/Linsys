@@ -8,7 +8,9 @@ c = ctrb(A,B); % controlabillity
 r_c= rank(c);
 
 % K = [k_1 k_2];
-% pol = eig(A-B*K); 
+[v, lambda ]= eig(A);
+dim = size(lambda);
+lambda = lambda * ones([dim(1),1]);
 
 %transferfunction
 A = [0 -4; 1 0]; B = [-2; 0]; C = [0 1]; D = 1;
