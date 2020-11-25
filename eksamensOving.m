@@ -24,6 +24,11 @@ g = tf(sys);
 syms s;
 re = ilaplace((s^2 +2)/(s^2 + 4));
 
+%% lyaponov
+% N = eye(2);
+% M = lyap(A,N);  %will probably not work most of the time, requires unike
+% solution
+
 %% positive definite check
 % M = [1 0; 0 1];
 % try chol(M)
