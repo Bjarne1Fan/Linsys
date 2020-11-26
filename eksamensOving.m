@@ -52,7 +52,8 @@ for k = 1: n
     P_bar(k+1) = A_d*P_hat(k)*A_d' + Q_d;
 end
 
-%% Minimal realization
-
-
-
+%% tips and tricks
+ syms m_1 m_2 m_3;
+ 
+M = [m_1 m_2; m_2 m_3];
+M_merket = M^(-1);
