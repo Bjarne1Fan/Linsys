@@ -63,6 +63,7 @@ catch ME
     disp("Not possible to stabilize system using LQR");
     K_lqr = 0;
 end
+
 %% Discrete KF
 n = 3; %number of iterations - 1
 
