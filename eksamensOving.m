@@ -154,3 +154,48 @@ for k = 1: n
 end
 %}
 
+%% Continuous KF simulation
+
+% Constants
+n_states = 4;
+dt = 0.01;
+t_sim = 10;
+
+t = dt:dt:t_sim;
+
+% Continuous state space
+
+A = zeros(n_states);
+B = ones(n_states, 1);
+C = eye(4);
+D = zeros(size(C,1), size(B,2));
+
+% Create system with disturbance and noise
+Qw = 0.01*eye(n_states);                    % Disturbance/process noise covariance matrix
+Rv = 0.1*eye(rank(C));                      % Measurement noise covariance matrix
+
+B_dist = [B Qw 0*B];                        % System gain matrix in the noisy system
+D_dist = zeros(size(C,1), size(B_dist,2));  % Feedthrough term in the noisy system
+D_dist(:, end) = diag(Rv);                  % Insert noise covariance in the feedthrough matrix
+
+ss_cont = ss(A, B_dist, C, D_dist);         % The state space with noise terms added
+
+% Kalman filter (continuous system)
+[L, P, E] = lqe(A, Qw, C, Qw, Rv);    
+B_kf = [B L];
+
+ss_kf = ss(A-L*C, B_kf, eye(n_states), 0*B_kf);
+
+% Create simulation input
+u_dist = randn(n_states, size(t, 2));
+u_noise = randn(size(t));
+
+u = 0*t; u(10:50) = 50; u(200:900) = -30;
+
+% Augmented system input
+u_aug = [u; Qw*Qw*u_dist; u_noise];
+
+% Simulated system
+[y, t] = lsim(ss_cont, u_aug, t);
+plot(t, y);
+
