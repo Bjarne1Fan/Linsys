@@ -215,8 +215,8 @@ C = eye(4);
 D = zeros(size(C,1), size(B,2));
 
 % Create system with disturbance and noise
-Qw = 0.01*eye(n_states);                    % Disturbance/process noise covariance matrix
-Rv = 0.1*eye(rank(C));                      % Measurement noise covariance matrix
+Qw = 10.0*eye(n_states);                    % Disturbance/process noise covariance matrix
+Rv = 10.0*eye(rank(C));                      % Measurement noise covariance matrix
 
 B_dist = [B Qw 0*B];                        % System gain matrix in the noisy system
 D_dist = zeros(size(C,1), size(B_dist,2));  % Feedthrough term in the noisy system
@@ -241,5 +241,13 @@ u_aug = [u; Qw*Qw*u_dist; u_noise];
 
 % Simulated system
 [y, t] = lsim(ss_cont, u_aug, t);
+[x, t] = lsim(ss_kf, [u; y'], t);
+
 plot(t, y);
+hold on;
+plot(t, x, 'k--');
+
+title("Solid = system states, Dashed = KF estimated states");
+
+
 
