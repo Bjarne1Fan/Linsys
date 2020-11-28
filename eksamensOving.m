@@ -27,7 +27,7 @@ rank_c = rank(C_con);
 %% Eigenvalues and vectors
 % Important: Matlab normalizes all eigenvectors by default. Divide by the
 % lowest eigenvector to acchieve unity
-[v, lambda] = eig(A)
+[v, lambda] = eig(A);
 dim = size(lambda);
 %lambda = lambda * ones([dim(1),1]); % Convert from a diagonal matrix to a vector
 
@@ -48,33 +48,66 @@ time_system = ilaplace((s^2 +2)/(s^2 + 4));
 % Warning: Matlab requires unique solution
 N = eye(2);
 try 
-    P = lyap(A,N);  
+    P_nd = lyap(A,N);  
 catch ME
     disp("Lyapunov not possible to evaluate")
 end
 
 %% Lyapunov - Positive definite check
-try chol(P)
-    disp(" ");
+try chol(P_nd)
     disp("Lyapunov positive definite")
 catch ME
-    disp(" ");
     disp("Lyapunov not positive definite")
 end
 
 %% LQR
-Q = eye(1);
-R = eye(1);
+Q_lqr = eye(2);
+R_lqr = eye(1);
 try 
-    K_lqr = lqr(A, B, Q, R);
+    K_lqr = lqr(A, B, Q_lqr, R_lqr);
 catch ME
-    disp(" ");
     disp("Not possible to stabilize system using LQR");
     K_lqr = 0;
 end
 
-%% Discrete KF
-n = 5; % Number of iterations + 1
+%% Continous KF
+syms p_11 p_12 p_22;
+
+% Variance from the given system
+Q_c = 2; 
+R_c = 3;
+
+P_nd = [p_11 p_12; 
+     p_12 p_22];
+
+% Hardcoded solution of the ricatti-equation. Could be improved by using
+% an in-built function
+P_dot = A*P_nd + P_nd*A' + G*Q_c*G' - P_nd*C'*inv(R_c)*C*P_nd == zeros(2);
+P_sol = solve(P_dot,[p_11 p_12 p_22]);
+p_11 = subs(P_sol.p_11);
+p_12 = subs(P_sol.p_12);
+p_22 = subs(P_sol.p_22);
+
+
+P_nd = [p_11 p_12;
+     p_12 p_22];
+
+% Kalman gain in the continous time
+K_kf_cont = P_nd*C'*inv(R_c);
+
+
+%% Discrete KF, one dimension
+
+ntimes = 5; % Number of iterations + 1
+
+% System matrices - given that the system is known in continous time
+% Must be one-dimensional
+A = -1;
+B = 1; 
+C = 1/10;
+D = 0;
+
+sysc = ss(A,B,C,D); % Continous state space model
 
 % If discretized from known system:
 T_s = 1;                % Sample time
@@ -95,64 +128,75 @@ u = [100 105 92 105 102];
 y = [10 91 220 288 405];
 
 % Variance from the given system
-Q_d = 4; 
-R_d = 25;
+q_d = 4; 
+r_d = 25;
 
 % Initial values
-K_kf_disc = zeros(1,n); 
-x_pri = 0; 
-P_pri = 12; 
+K_kf_disc_1d = zeros(1,ntimes); 
+x_pri_1d = 0; 
+P_pri_1d = 12; 
 
-for k = 1:n
-    K_kf_disc(k) = (P_pri(k)*C_d')*(C_d*P_pri(k)*C_d + R_d)^(-1);
-    x_hat(k) = x_pri(k) + K_kf_disc(k)*(y(k) - C_d*x_pri(k));
-    P_hat(k) = (eye(1) - K_kf_disc(k)*C_d)*P_pri(k)*(eye(1) - K_kf_disc(k)*C_d)' + K_kf_disc(k)*R_d*K_kf_disc(k)';
-    x_pri(k+1) = A_d*x_hat(k) + B_d*u(k);
-    P_pri(k+1) = A_d*P_hat(k)*A_d' + Q_d;
+for k = 1:ntimes
+    K_kf_disc_1d(k) = (P_pri_1d(k)*C_d')*(C_d*P_pri_1d(k)*C_d + r_d)^(-1);
+    x_hat_1d(k) = x_pri_1d(k) + K_kf_disc_1d(k)*(y(k) - C_d*x_pri_1d(k));
+    P_hat(k) = (eye(1) - K_kf_disc_1d(k)*C_d)*P_pri_1d(k)*(eye(1) - K_kf_disc_1d(k)*C_d)' + K_kf_disc_1d(k)*r_d*K_kf_disc_1d(k)';
+    x_pri_1d(k+1) = A_d*x_hat_1d(k) + B_d*u(k);
+    P_pri_1d(k+1) = A_d*P_hat(k)*A_d' + q_d;
 end
 
-%% Continous KF
-syms p_11 p_12 p_22;
 
-% Variance from the given system
-Q_c = 2; 
-R_c = 3;
-
-P = [p_11 p_12; 
-     p_12 p_22];
-
-% Hardcoded solution of the ricatti-equation. Could be improved by using
-% an in-built function
-P_dot = A*P + P*A' + G*Q_c*G' - P*C'*inv(R_c)*C*P == zeros(2);
-P_sol = solve(P_dot,[p_11 p_12 p_22]);
-p_11 = subs(P_sol.p_11);
-p_12 = subs(P_sol.p_12);
-p_22 = subs(P_sol.p_22);
-
-
-P = [p_11 p_12;
-     p_12 p_22];
-
-% Kalman gain in the continous time
-K_kf_cont = P*C'*inv(R);
-
-
-%% KF discrete, higher dim
+%% Discrete KF, 2 or higher dimensions - DO NOT USE! DOES NOT WORK!!
 %{
-n = 6; %number of iterations - 1
-A_d = eye(2); B_d = 0; C_d = eye(2);
-u = zeros(1,n); y = [10 6 1 1 11 -3; 4 0 1 16 8 8]; 
-Q_d = 0*eye(2); R_d = 25*eye(2);
-K=zeros(1,n); x_bar = [0;0]; P_bar = eye(2); %inital values
-for k = 1: n
-    K = (P_bar*C_d')*(C_d*P_bar*C_d' + R_d)^(-1);
-    x_hat = x_bar + K*(y(:,k) - C_d*x_bar);
-    P_hat = (eye(2) -K*C_d)*P_bar*(eye(2)-K*C_d)' + K*R_d*K';
-    x_bar = A_d*x_hat + B_d*u(k);
-    P_bar = A_d*P_hat*A_d' + Q_d;
-    x_all_hat(:,k) = x_hat'; % Store state vector for plotting
+ntimes = 6; % Number of iterations + 1
+dim = 2;    % Dimension-size
+T_s = 1;    % Sample time
+
+% System matrices 
+A = [1 0; 
+     0  1];
+B = [0; 
+     0];
+C = [1 0;
+     0 1];
+D = [0;
+     0];
+
+% Variances in the system
+q_d = 0; 
+r_d = 25;
+
+% Measurements
+y_t = [10 6 1 1 11 -3;
+       4 0 1 16 8 8];
+
+% Initial values
+x0 = zeros(dim,1);
+x_pri_nd = x0; % Initial a priori estimate
+P_pri_nd = r_d^2*eye(dim); % Initial a priori P
+
+% Matrix for state values:
+x_all = zeros(dim,ntimes);
+
+% Discretizing 
+sysc = ss(A,B,C,D);     % Continous state space model
+sysd = c2d(sysc, T_s);  % Discrete system model
+A_d = sysd.A;
+B_d = sysd.B;
+C_d = sysd.C;
+D_d = sysd.D;
+Q_d = q_d*eye(dim);
+R_d = r_d*eye(dim);
+
+for k = 1:ntimes
+    L = P_pri_nd*C_d'*inv(C_d*P_pri_nd*C_d' + R_d);
+    x_hat_nd = x_pri_nd + L*(y_t(:,k) - C_d*x_pri_nd);
+    P_nd = (eye(dim) - L*C_d)*P_pri_nd*(eye(dim) - L*C_d)' + L*R_d*L';
+    x_pri_nd = A_d*x_hat_nd;
+    P_pri_nd = A_d*P_nd*A_d' + Q_d;
+    x_all(:,k) = x_hat_nd;
 end
 %}
+
 
 %% Continuous KF simulation
 
