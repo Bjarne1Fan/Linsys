@@ -25,7 +25,7 @@ c = ctrb(A,B);
 r_c = rank(c);
 
 %% Eigenvalues and vectors
-% Important: Matlab normalizes all eqigenvectors by default. Divide by the
+% Important: Matlab normalizes all eigenvectors by default. Divide by the
 % lowest eigenvector to acchieve unity
 [v, lambda] = eig(A);
 dim = size(lambda);
