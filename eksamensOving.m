@@ -135,3 +135,22 @@ P = [p_11 p_12;
 
 % Kalman gain in the continous time
 K_kf_cont = P*C'*inv(R);
+
+
+%% KF discrete, higher dim
+%{
+n = 6; %number of iterations - 1
+A_d = eye(2); B_d = 0; C_d = eye(2);
+u = zeros(1,n); y = [10 6 1 1 11 -3; 4 0 1 16 8 8]; 
+Q_d = 0*eye(2); R_d = 25*eye(2);
+K=zeros(1,n); x_bar = [0;0]; P_bar = eye(2); %inital values
+for k = 1: n
+    K = (P_bar*C_d')*(C_d*P_bar*C_d' + R_d)^(-1);
+    x_hat = x_bar + K*(y(:,k) - C_d*x_bar);
+    P_hat = (eye(2) -K*C_d)*P_bar*(eye(2)-K*C_d)' + K*R_d*K';
+    x_bar = A_d*x_hat + B_d*u(k);
+    P_bar = A_d*P_hat*A_d' + Q_d;
+    x_all_hat(:,k) = x_hat'; % Store state vector for plotting
+end
+%}
+
